@@ -32,6 +32,8 @@ function get-packagemap() {
 function compose-packages() { 
     write-host "Composing packages"
     mkdir $msbuildDir -ErrorAction SilentlyContinue | out-null
+    rm -re "$msbuildDir\*"
+
     $map = get-packagemap
     foreach ($k in $map.Keys) {
         $d = join-path $packagesDir "$($k).$($map[$k])"
@@ -42,6 +44,16 @@ function compose-packages() {
             }
             "Microsoft.Build*" { 
                 cp -re -fo (join-path $d "lib\net46\*") $msbuildDir
+                break
+            }
+            "Microsoft.Net.Compilers" {
+                $roslynDir = join-path $msbuildDir "Roslyn"
+                mkdir $roslynDir | out-null
+                cp -re -fo (join-path $d "tools\*") $roslynDir
+                break
+            }
+            "System.Collections.Immutable" {
+                cp -re -fo (join-path $d "lib\netstandard1.0\*") $msbuildDir
                 break
             }
             default { throw "Did not account for $k" }
