@@ -1,4 +1,4 @@
-param ()
+param ([switch]$test = $false)
 set-strictmode -version 2.0
 $ErrorActionPreference="Stop"
 
@@ -61,11 +61,20 @@ function compose-packages() {
     }
 }
 
+function run-tests() {
+    $msbuild = join-path $msbuildDir "msbuild.exe"
+    & src\run-tests.ps1 $msbuild
+}
+
 try {
     pushd $repoDir
     
     download-packages
     compose-packages
+
+    if ($test) {
+        run-tests
+    }
 
     exit 0
 }
