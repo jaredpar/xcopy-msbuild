@@ -4,8 +4,7 @@ param (
 set-strictmode -version 2.0
 $ErrorActionPreference="Stop"
 
-try
-{
+try {
     $lines = @()
     $lines += '<?xml version="1.0" encoding="utf-8"?>'
     $lines += '<packages>'
@@ -22,8 +21,7 @@ try
     $lines | out-file -encoding UTF8 $configFilePath
     & $nuget restore $configFilePath -PackagesDirectory $packagesDir | out-null
 }
-catch [exception]
-{
+catch [exception] {
     write-host $_.Exception
     exit -1
 }
