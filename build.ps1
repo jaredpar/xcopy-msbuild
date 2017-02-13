@@ -105,6 +105,7 @@ function compose-portable() {
 
     cp (join-path $sourceDir "Microsoft.Portable.*") $portableDir
     cp -re (join-path $sourceDir "v5.0") $portableDir
+    cp -re (join-path $sourceDir "v4.5") $portableDir
 }
 
 try {
