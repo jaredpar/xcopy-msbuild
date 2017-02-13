@@ -13,8 +13,8 @@ $packagesDir = "e:\temp\msbuild"
 $msbuildVersion = "15.0"
 
 $importPropsBeforeDir = join-path (join-path $msbuildDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
-$importTargetsBeforeDir = join-path (join-path $msbuildDir $msbuildVersion) "Imports\Microsoft.Common.targets\ImportBefore"
-$importTargetsAfterDir = join-path (join-path $msbuildDir $msbuildVersion) "Imports\Microsoft.Common.targets\ImportAfter"
+$importTargetsBeforeDir = join-path (join-path $msbuildDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
+$importTargetsAfterDir = join-path (join-path $msbuildDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
 
 # Download all of the packages needed to compose the xcopy MSBuild
 function download-packages() {
