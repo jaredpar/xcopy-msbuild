@@ -68,6 +68,10 @@ function compose-packages() {
                 cp -re (join-path $d "lib\netstandard1.0\*") $msbuildDir
                 break
             }
+            "System.Threading.Tasks.Dataflow" {
+                cp -re (join-path $d "lib\portable-net45+win8+wpa81") $msbuildDir
+                break
+            }
             default { throw "Did not account for $k" }
         }
     }
