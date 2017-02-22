@@ -135,6 +135,16 @@ function compose-framework() {
     }
 }
 
+function zip-msbuild() { 
+    write-host "Creating zip file"
+
+    $zipFile = join-path $binariesDir "msbuild.zip"
+    rm $zipFile -ErrorAction SilentlyContinue
+    Add-Type -Assembly System.IO.Compression.FileSystem
+    $compressionLevel = [System.IO.Compression.CompressionLevel]::Optimal
+    [IO.Compression.ZipFile]::CreateFromDirectory($outDir, $zipFile, $compressionLevel, $true)
+}
+
 try {
     pushd $repoDir
     
@@ -143,6 +153,7 @@ try {
     compose-projectjson
     compose-portable
     compose-framework
+    zip-msbuild
 
     if ($test) {
         run-tests
