@@ -6,9 +6,8 @@ $ErrorActionPreference="Stop"
 
 $repoDir = $PSScriptRoot
 $binariesDir = join-path $repoDir "binaries"
-$outDir = join-path $binariesDir "xtoolset"
-$outMSBuildDir = join-path  $outDir "msbuild"
-$outFrameworkDir = join-path  $outDir "framework"
+$outDir = join-path $binariesDir "msbuild"
+$outFrameworkDir = join-path  $outDir "Framework"
 
 # TODO: fix this to have the standard calculated values
 $packagesDir = "e:\temp\msbuild"
@@ -16,9 +15,9 @@ $packagesDir = "e:\temp\msbuild"
 # TODO: hacky values that work for now
 $msbuildVersion = "15.0"
 
-$importPropsBeforeDir = join-path (join-path $outMSBuildDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
-$importTargetsBeforeDir = join-path (join-path $outMSBuildDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
-$importTargetsAfterDir = join-path (join-path $outMSBuildDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
+$importPropsBeforeDir = join-path (join-path $outDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
+$importTargetsBeforeDir = join-path (join-path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
+$importTargetsAfterDir = join-path (join-path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
 
 # Download all of the packages needed to compose the xcopy MSBuild
 function download-packages() {
@@ -46,7 +45,6 @@ function compose-packages() {
 
     mkdir $outDir -ErrorAction SilentlyContinue | out-null
     rm -re -fo "$outDir\*"
-    mkdir $outMSBuildDir | out-null
     mkdir $outFrameworkDir | out-null
     mkdir $importPropsBeforeDir | out-null
     mkdir $importTargetsBeforeDir | out-null
@@ -57,25 +55,25 @@ function compose-packages() {
         $d = join-path $packagesDir "$($k).$($map[$k])"
         switch -wildcard ($k) {
             "Microsoft.Build.Runtime" { 
-                cp -re -fo (join-path $d "contentFiles\any\net46\*") $outMSBuildDir
+                cp -re -fo (join-path $d "contentFiles\any\net46\*") $outDir
                 break
             }
             "Microsoft.Build*" { 
-                cp -re (join-path $d "lib\net46\*") $outMSBuildDir
+                cp -re (join-path $d "lib\net46\*") $outDir
                 break
             }
             "Microsoft.Net.Compilers" {
-                $roslynDir = join-path $outMSBuildDir "Roslyn"
+                $roslynDir = join-path $outDir "Roslyn"
                 mkdir $roslynDir -ErrorAction SilentlyContinue | out-null
                 cp -re (join-path $d "tools\*") $roslynDir
                 break
             }
             "System.Collections.Immutable" {
-                cp -re (join-path $d "lib\netstandard1.0\*") $outMSBuildDir
+                cp -re (join-path $d "lib\netstandard1.0\*") $outDir
                 break
             }
             "System.Threading.Tasks.Dataflow" {
-                cp -re (join-path $d "lib\portable-net45+win8+wpa81\*") $outMSBuildDir
+                cp -re (join-path $d "lib\portable-net45+win8+wpa81\*") $outDir
                 break
             }
             default { throw "Did not account for $k" }
@@ -84,7 +82,7 @@ function compose-packages() {
 }
 
 function run-tests() {
-    $msbuild = join-path $outMSBuildDir "msbuild.exe"
+    $msbuild = join-path $outDir "msbuild.exe"
     & src\run-tests.ps1 $msbuild
 }
 
@@ -95,7 +93,7 @@ function run-tests() {
 function compose-projectjson() { 
     write-host "Composing project.json support"
     $sourceDir = join-path $msbuildPath "Microsoft\NuGet"
-    $destDir = join-path $outMSBuildDir "Microsoft\NuGet"
+    $destDir = join-path $outDir "Microsoft\NuGet"
     mkdir $destDir | out-null
     cp -re "$sourceDir\*" $destDir
     cp (join-path $msbuildPath "15.0\Imports\Microsoft.Common.Props\ImportBefore\Microsoft.NuGet.ImportBefore.props") $importPropsBeforeDir
@@ -105,7 +103,7 @@ function compose-projectjson() {
 # TODO: remove this step once we have a valid portable location
 function compose-portable() {
     write-host "Composing portable targets"
-    $portableDir = join-path $outMSBuildDir "Microsoft\Portable"
+    $portableDir = join-path $outDir "Microsoft\Portable"
     mkdir $portableDir | out-null
     $sourceDir = join-path $msbuildPath "Microsoft\Portable"
 
@@ -130,7 +128,10 @@ function compose-framework() {
     $frameworkDir = join-path $frameworkDir "Program Files (x86)\Reference Assemblies\Microsoft\Framework"
 
     foreach ($item in $copyList) {
-        cp -re (join-path $frameworkDir $item) $outFrameworkDir
+        $dest = join-path $outframeworkDir $item
+        $source = join-path $frameworkDir $item
+        mkdir $dest | out-null
+        cp -re $source $dest
     }
 }
 
