@@ -5,7 +5,7 @@ set-strictmode -version 2.0
 $ErrorActionPreference="Stop"
 
 $repoDir = $PSScriptRoot
-$binariesDir = join-path $repoDir "binaries"
+
 $outDir = join-path $binariesDir "xtoolset"
 $outMSBuildDir = join-path  $outDir "msbuild"
 $outFrameworkDir = join-path  $outDir "framework"
