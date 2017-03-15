@@ -160,10 +160,12 @@ function Compose-Framework() {
     Write-Host "Composing reference assemblies"
     $copyList = @(
         ".NETCore\v5.0",
+        ".NETFramework\v4.0",
         ".NETFramework\v4.6",
         ".NETFramework\v4.6.1",
         ".NETFramework\v4.6.2",
-        ".NETFramework\v4.X"
+        ".NETFramework\v4.X",
+        ".NETPortable\v4.5"
     )
 
     $frameworkDir = [IO.Path]::GetPathRoot($msbuildPath)
@@ -173,7 +175,7 @@ function Compose-Framework() {
         $dest = Join-Path $outframeworkDir $item
         $source = Join-Path $frameworkDir $item
         Create-Directory $dest | Out-Null
-        Copy-Item -re $source $dest
+        Copy-Item -re "$source\*" $dest
     }
 }
 
