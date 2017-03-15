@@ -113,6 +113,21 @@ function Run-Tests() {
     & src\run-tests.ps1 $msbuild
 }
 
+function Create-ReadMe() {
+    $sha = & git show-ref HEAD -s
+    Write-Host "Creating README.md"
+    $text =
+"
+This is an xcopy version of MSBuild generated from:
+
+- Repo: https://github.com/jaredpar/xcopy-msbuild
+- SHA: $($sha)
+- Source: https://github.com/jaredpar/xcopy-msbuild/commit/$($sha)
+"
+    $readmePath = Join-Path $outDir "README.md"
+    $text | Out-File $readmePath
+}
+
 # TODO: remove this step once we have a valid package source
 #
 # The project.json components aren't presently available as a Nuget package.  Compose them 
@@ -181,6 +196,7 @@ try {
     Compose-Projectjson
     Compose-Portable
     Compose-Framework
+    Create-ReadMe
     Zip-MSBuild
 
     if ($test) {
