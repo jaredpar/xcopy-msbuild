@@ -1,13 +1,17 @@
+[CmdletBinding(PositionalBinding=$false)]
 param (
-    [string]$msbuildPath = $(throw "Need a path to a valid MSBuild 15.0 installation"),
-    [switch]$test = $false)
+    [string]$msbuildDir = "",
+    [string]$msbuildVersion = "0.0.1-alpha",
+    [string]$refVersion = "0.0.1-alpha",
+    [switch]$test = $false,
+    [parameter(ValueFromRemainingArguments=$true)] $extraArgs)
 Set-StrictMode -version 2.0
 $ErrorActionPreference="Stop"
 
 $repoDir = $PSScriptRoot
 $binariesDir = Join-Path $repoDir "binaries"
 $outDir = Join-Path $binariesDir "msbuild"
-$outFrameworkDir = Join-Path  $outDir "Framework"
+$outFrameworkDir = Join-Path  $binariesDir "Framework"
 $nuget = Join-Path $binariesDir "tools\nuget.exe"
 
 # TODO: hacky values that work for now
@@ -16,6 +20,13 @@ $msbuildVersion = "15.0"
 $importPropsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
 $importTargetsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
 $importTargetsAfterDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
+
+function Print-Usage() {
+    Write-Host "build.ps1"
+    Write-Host "`t-msbuildDir path          Path to MSBuild"
+    Write-Host "`t-msbuildVersion version   RoslynTools.MSBuild package version"
+    Write-Host "`t-refVersion version       RoslynTools.ReferenceAssemblies package version"
+}
 
 function Create-Directory([string]$dir) {
     New-Item $dir -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
@@ -72,6 +83,7 @@ function Compose-Packages() {
     Create-Directory $outDir -ErrorAction SilentlyContinue | Out-Null
     Remove-Item -re -fo "$outDir\*"
     Create-Directory $outFrameworkDir | Out-Null
+    Remove-Item -re -fo "$outFrameworkDir\*"
     Create-Directory $importPropsBeforeDir | Out-Null
     Create-Directory $importTargetsBeforeDir | Out-Null
     Create-Directory $importTargetsAfterDir | Out-Null
@@ -124,8 +136,7 @@ This is an xcopy version of MSBuild generated from:
 - SHA: $($sha)
 - Source: https://github.com/jaredpar/xcopy-msbuild/commit/$($sha)
 "
-    $readmePath = Join-Path $outDir "README.md"
-    $text | Out-File $readmePath
+    $text | Out-File (Join-Path $outDir "README.md")
 }
 
 # TODO: remove this step once we have a valid package source
@@ -134,12 +145,12 @@ This is an xcopy version of MSBuild generated from:
 # together here from an existing MSBuild installation.
 function Compose-Projectjson() { 
     Write-Host "Composing project.json support"
-    $sourceDir = Join-Path $msbuildPath "Microsoft\NuGet"
+    $sourceDir = Join-Path $msbuildDir "Microsoft\NuGet"
     $destDir = Join-Path $outDir "Microsoft\NuGet"
     Create-Directory $destDir | Out-Null
     Copy-Item -re "$sourceDir\*" $destDir
-    Copy-Item (Join-Path $msbuildPath "15.0\Imports\Microsoft.Common.Props\ImportBefore\Microsoft.NuGet.ImportBefore.props") $importPropsBeforeDir
-    Copy-Item (Join-Path $msbuildPath "15.0\Microsoft.Common.Targets\ImportAfter\Microsoft.NuGet.ImportAfter.targets") $importTargetsAfterDir
+    Copy-Item (Join-Path $msbuildDir "15.0\Imports\Microsoft.Common.Props\ImportBefore\Microsoft.NuGet.ImportBefore.props") $importPropsBeforeDir
+    Copy-Item (Join-Path $msbuildDir "15.0\Microsoft.Common.Targets\ImportAfter\Microsoft.NuGet.ImportAfter.targets") $importTargetsAfterDir
 }
 
 # TODO: remove this step once we have a valid portable location
@@ -147,7 +158,7 @@ function Compose-Portable() {
     Write-Host "Composing portable targets"
     $portableDir = Join-Path $outDir "Microsoft\Portable"
     Create-Directory $portableDir | Out-Null
-    $sourceDir = Join-Path $msbuildPath "Microsoft\Portable"
+    $sourceDir = Join-Path $msbuildDir "Microsoft\Portable"
 
     Copy-Item (Join-Path $sourceDir "Microsoft.Portable.*") $portableDir
     Copy-Item -re (Join-Path $sourceDir "v5.0") $portableDir
@@ -168,7 +179,7 @@ function Compose-Framework() {
         ".NETPortable\v4.5"
     )
 
-    $frameworkDir = [IO.Path]::GetPathRoot($msbuildPath)
+    $frameworkDir = [IO.Path]::GetPathRoot($msbuildDir)
     $frameworkDir = Join-Path $frameworkDir "Program Files (x86)\Reference Assemblies\Microsoft\Framework"
 
     foreach ($item in $copyList) {
@@ -179,19 +190,32 @@ function Compose-Framework() {
     }
 }
 
-function Zip-MSBuild() { 
-    Write-Host "Creating zip file"
+function Create-Packages() {
+    
+    $name = "RoslynTools.ReferenceAssemblies"
+    Write-Host "Packing $name"
+    & $nuget pack framework.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$name`;version=$msbuildVersion`;filePath=$outFrameworkDir
 
-    $zipFile = Join-Path $binariesDir "msbuild.zip"
-    Remove-Item $zipFile -ErrorAction SilentlyContinue
-    Add-Type -Assembly System.IO.Compression.FileSystem
-    $compressionLevel = [System.IO.Compression.CompressionLevel]::Optimal
-    [IO.Compression.ZipFile]::CreateFromDirectory($outDir, $zipFile, $compressionLevel, $true)
+    $name = "RoslynTools.MSBuild"
+    Write-Host "Packing $name"
+    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$name`;version=$refVersion`;filePath=$outDir
+
 }
 
+Push-Location $repoDir
 try {
-    Push-Location $repoDir
-    
+    if ($extraArgs -ne $null) {
+        Write-Host "Did not recognize extra arguments: $extraArgs"
+        Print-Usage
+        exit 1
+    }
+
+    if (-not (Test-Path $msbuildDir)) {
+        Write-Host "msbuildDir must point to a valid MSBuild installation"
+        Print-Usage
+        exit 1
+    }
+
     Download-NuGet
     Download-Packages
     Compose-Packages
@@ -199,7 +223,7 @@ try {
     Compose-Portable
     Compose-Framework
     Create-ReadMe
-    Zip-MSBuild
+    Create-Packages
 
     if ($test) {
         run-tests
