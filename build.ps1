@@ -1,16 +1,13 @@
 param (
     [string]$msbuildPath = $(throw "Need a path to a valid MSBuild 15.0 installation"),
     [switch]$test = $false)
-set-strictmode -version 2.0
+Set-StrictMode -version 2.0
 $ErrorActionPreference="Stop"
 
 $repoDir = $PSScriptRoot
 $binariesDir = Join-Path $repoDir "binaries"
 $outDir = Join-Path $binariesDir "msbuild"
 $outFrameworkDir = Join-Path  $outDir "Framework"
-
-# TODO: fix this to have the standard calculated values
-$packagesDir = "e:\temp\msbuild"
 
 # TODO: hacky values that work for now
 $msbuildVersion = "15.0"
@@ -23,6 +20,19 @@ function Create-Directory([string]$dir) {
     New-Item $dir -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 }
 
+function Get-PackagesDir {
+    $d = $null
+    if ($env:NUGET_PACKAGES -ne $null) {
+        $d = $env:NUGET_PACKAGES
+    }
+    else {
+        $d = Join-Path $env:UserProfile ".nuget\packages\"
+    }
+
+    Create-Directory $d
+    return $d
+}
+
 # Download all of the packages needed to compose the xcopy MSBuild
 function Download-Packages() {
     $nuget = Join-Path $binariesDir "tools\nuget.exe"
@@ -31,6 +41,7 @@ function Download-Packages() {
     & src\download-nuget.ps1 -destPath $nuget -version "3.6.0-beta1"
 
     Write-Host "Restoring packages"
+    $packagesDir = Get-PackagesDir
     & src\restore.ps1 -nuget $nuget -packagesDir $packagesDir
 }
 
@@ -54,6 +65,7 @@ function Compose-Packages() {
     Create-Directory $importTargetsBeforeDir | Out-Null
     Create-Directory $importTargetsAfterDir | Out-Null
 
+    $packagesDir = Get-PackagesDir
     $map = get-packagemap
     foreach ($k in $map.Keys) {
         $d = Join-Path $packagesDir "$($k).$($map[$k])"
