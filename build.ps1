@@ -8,6 +8,7 @@ $repoDir = $PSScriptRoot
 $binariesDir = Join-Path $repoDir "binaries"
 $outDir = Join-Path $binariesDir "msbuild"
 $outFrameworkDir = Join-Path  $outDir "Framework"
+$nuget = Join-Path $binariesDir "tools\nuget.exe"
 
 # TODO: hacky values that work for now
 $msbuildVersion = "15.0"
@@ -33,23 +34,33 @@ function Get-PackagesDir {
     return $d
 }
 
-# Download all of the packages needed to compose the xcopy MSBuild
-function Download-Packages() {
-    $nuget = Join-Path $binariesDir "tools\nuget.exe"
-
-    Write-Host "Downloadnig nuget.exe"
-    & src\download-nuget.ps1 -destPath $nuget -version "3.6.0-beta1"
-
-    Write-Host "Restoring packages"
-    $packagesDir = Get-PackagesDir
-    & src\restore.ps1 -nuget $nuget -packagesDir $packagesDir
+function Download-NuGet() {
+    if (-not (Test-Path $nuget)) {
+        Create-Directory (Split-Path -parent $nuget)
+        $version = "3.6.0-beta1"
+        Write-Host "Downloading NuGet.exe $version"
+        $webClient = New-Object -TypeName "System.Net.WebClient"
+        $webClient.DownloadFile("https://dist.nuget.org/win-x86-commandline/v$version/NuGet.exe", $nuget)
+    }
 }
 
-function Get-Packagemap() {
+# Download all of the packages needed to compose the xcopy MSBuild
+function Download-Packages() {
+    Write-Host "Restoring packages"
+    $packagesDir = Get-PackagesDir
+    $configFilePath = Join-Path $PSScriptRoot "packages.config"
+    $output = & $nuget restore $configFilePath -PackagesDirectory $packagesDir | out-null
+    if (-not $?) {
+        Write-Host $output
+        throw "Restore failed"
+    }
+}
+
+function Get-PackageMap() {
     $map = @{}
-    foreach ($line in gc (Join-Path $repoDir "src\packages.txt")) {
-        $all = $line.split(':');
-        $map[$all[0]] = $all[1]
+    $x = [xml](Get-Content (Join-Path $repoDir "packages.config"))
+    foreach ($p in $x.packages.package) {
+        $map[$p.id] = $p.version
     }
     return $map
 }
@@ -66,7 +77,7 @@ function Compose-Packages() {
     Create-Directory $importTargetsAfterDir | Out-Null
 
     $packagesDir = Get-PackagesDir
-    $map = get-packagemap
+    $map = Get-PackageMap
     foreach ($k in $map.Keys) {
         $d = Join-Path $packagesDir "$($k).$($map[$k])"
         switch -wildcard ($k) {
@@ -164,6 +175,7 @@ function Zip-MSBuild() {
 try {
     Push-Location $repoDir
     
+    Download-NuGet
     Download-Packages
     Compose-Packages
     Compose-Projectjson
