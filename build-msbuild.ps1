@@ -1,37 +1,27 @@
 [CmdletBinding(PositionalBinding=$false)]
 param (
     [string]$msbuildDir = "",
-    [string]$msbuildVersion = "0.0.1-alpha",
-    [string]$refVersion = "0.0.1-alpha",
-    [switch]$test = $false,
+    [string]$packageName = "RoslynTools.MSBuild",
+    [string]$packageVersion = "0.0.1-alpha",
     [parameter(ValueFromRemainingArguments=$true)] $extraArgs)
+
 Set-StrictMode -version 2.0
 $ErrorActionPreference="Stop"
-
-$outDir = Join-Path $binariesDir "msbuild"
-$outFrameworkDir = Join-Path  $binariesDir "Framework"
 
 # TODO: hacky values that work for now
 $msbuildVersion = "15.0"
 
-$importPropsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
-$importTargetsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
-$importTargetsAfterDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
-
 function Print-Usage() {
-    Write-Host "build.ps1"
-    Write-Host "`t-msbuildDir path          Path to MSBuild"
-    Write-Host "`t-msbuildVersion version   RoslynTools.MSBuild package version"
-    Write-Host "`t-refVersion version       RoslynTools.ReferenceAssemblies package version"
+    Write-Host "build-msbuild.ps1"
+    Write-Host "`t-msbuildDir path  Path to MSBuild"
+    Write-Host "\t-packageName      Name of the nuget package (RoslynTools.MSBuild)"
+    Write-Host "\t-packageVersion   Version of the nuget package"
 }
-
-function Create-Directory([string]$dir) {
-    New-Item $dir -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
-}
-
 
 # Download all of the packages needed to compose the xcopy MSBuild
 function Download-Packages() {
+    $nuget = Ensure-NuGet
+
     Write-Host "Restoring packages"
     $packagesDir = Get-PackagesDir
     $configFilePath = Join-Path $PSScriptRoot "packages.config"
@@ -57,8 +47,6 @@ function Compose-Packages() {
 
     Create-Directory $outDir -ErrorAction SilentlyContinue | Out-Null
     Remove-Item -re -fo "$outDir\*"
-    Create-Directory $outFrameworkDir | Out-Null
-    Remove-Item -re -fo "$outFrameworkDir\*"
     Create-Directory $importPropsBeforeDir | Out-Null
     Create-Directory $importTargetsBeforeDir | Out-Null
     Create-Directory $importTargetsAfterDir | Out-Null
@@ -93,11 +81,6 @@ function Compose-Packages() {
             default { throw "Did not account for $k" }
         }
     }
-}
-
-function Run-Tests() {
-    $msbuild = Join-Path $outDir "msbuild.exe"
-    & src\run-tests.ps1 $msbuild
 }
 
 function Create-ReadMe() {
@@ -167,18 +150,21 @@ function Compose-Framework() {
 
 function Create-Packages() {
     
-    $name = "RoslynTools.ReferenceAssemblies"
-    Write-Host "Packing $name"
-    & $nuget pack framework.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$name`;version=$msbuildVersion`;filePath=$outFrameworkDir
-
-    $name = "RoslynTools.MSBuild"
-    Write-Host "Packing $name"
-    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$name`;version=$refVersion`;filePath=$outDir
-
+    $nuget = Ensure-NuGet
+    Write-Host "Packing $packageName"
+    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$outDir
 }
 
-Push-Location $repoDir
+Push-Location $PSScriptRoot
 try {
+    . .\build-utils.ps1
+
+    $outDir = Join-Path $binariesDir "msbuild"
+    $importPropsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
+    $importTargetsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
+    $importTargetsAfterDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
+
+
     if ($extraArgs -ne $null) {
         Write-Host "Did not recognize extra arguments: $extraArgs"
         Print-Usage
@@ -191,18 +177,12 @@ try {
         exit 1
     }
 
-    Download-NuGet
     Download-Packages
     Compose-Packages
     Compose-Projectjson
     Compose-Portable
-    Compose-Framework
     Create-ReadMe
     Create-Packages
-
-    if ($test) {
-        run-tests
-    }
 
     exit 0
 }

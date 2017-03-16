@@ -10,8 +10,6 @@ param (
 Set-StrictMode -version 2.0
 $ErrorActionPreference="Stop"
 
-$outDir = Join-Path $PSScriptRoot "binaries\Framework"
-
 function Print-Usage() {
     Write-Host "build-reference-assemblies.ps1"
     Write-Host "`t-root path        Root to look for reference assemblies (c:\)"
@@ -57,6 +55,8 @@ function Create-Package() {
 Push-Location $PSScriptRoot
 try {
     . .\build-utils.ps1
+
+    $outDir = Join-Path $binariesDir "Framework"
 
     if ($extraArgs -ne $null) {
         Write-Host "Did not recognize extra arguments: $extraArgs"

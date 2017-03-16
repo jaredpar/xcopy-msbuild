@@ -8,7 +8,7 @@ version of MSBuild which can be distributed via xcopy / nuget.
 To build the xcopy msbuild simple run the following command
 
 ``` cmd
-.\build.ps1 -msbuildDir <path to msbuild>
+.\build-msbuild.ps1 -msbuildDir <path to msbuild>
 ```
 
 That will put the MSBuild output into `binaries\msbuild`.  
@@ -33,3 +33,9 @@ Note that MSBuild needs to be told of their location via `TargetFrameworkRootPat
 msbuild /p:TargetFrameworkRootPath=path\to\refassemblynuget
 ```
 
+## Controlling package name and version
+
+Both of the build scripts accept the following arguments to control the name and version of the package:
+
+- packageName: Name of the package
+- packageVersion: Version of the package
