@@ -124,30 +124,6 @@ function Compose-Portable() {
     Copy-Item -re (Join-Path $sourceDir "v4.6") $portableDir
 }
 
-# TODO: remove this step once we have a valid framework asesmbly project
-function Compose-Framework() {
-    Write-Host "Composing reference assemblies"
-    $copyList = @(
-        ".NETCore\v5.0",
-        ".NETFramework\v4.0",
-        ".NETFramework\v4.6",
-        ".NETFramework\v4.6.1",
-        ".NETFramework\v4.6.2",
-        ".NETFramework\v4.X",
-        ".NETPortable\v4.5"
-    )
-
-    $frameworkDir = [IO.Path]::GetPathRoot($msbuildDir)
-    $frameworkDir = Join-Path $frameworkDir "Program Files (x86)\Reference Assemblies\Microsoft\Framework"
-
-    foreach ($item in $copyList) {
-        $dest = Join-Path $outframeworkDir $item
-        $source = Join-Path $frameworkDir $item
-        Create-Directory $dest | Out-Null
-        Copy-Item -re "$source\*" $dest
-    }
-}
-
 function Create-Packages() {
     
     $nuget = Ensure-NuGet
