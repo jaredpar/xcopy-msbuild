@@ -124,6 +124,14 @@ function Compose-Portable() {
     Copy-Item -re (Join-Path $sourceDir "v4.6") $portableDir
 }
 
+function Compose-SDK() { 
+    Write-Host "Composing the SDK"
+    $sdkDir = Join-Path $outDir "SDKs\Microsoft.Net.Sdk"
+    Create-Directory $sdkDir | Out-Null
+    $sourceDir = Join-Path $msbuildDir "SDKs\Microsoft.Net.Sdk"
+    Copy-Item -re "$sourceDir\*" $sdkDir
+}
+
 function Create-Packages() {
     
     $nuget = Ensure-NuGet
@@ -157,6 +165,7 @@ try {
     Compose-Packages
     Compose-Projectjson
     Compose-Portable
+    Compose-SDK
     Create-ReadMe
     Create-Packages
 

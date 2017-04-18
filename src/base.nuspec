@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>RoslynTools.XCopyMSBuild</id>
+    <version>$version$</version>
+    <title>RoslynTools.XCopyMSBuild</title>
+    <authors>roslyn</authors>
+    <owners>roslyn</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkID=614949</licenseUrl>
+    <projectUrl>https://github.com/jaredpar/xcopy-msbuild</projectUrl>
+    <iconUrl>http://aka.ms/vsextensibilityicon</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>XCopy MSBuild package</description>
+    <summary></summary>
+    <releaseNotes>https://www.visualstudio.com/news/vs2015-vs</releaseNotes>
+    <copyright>Copyright © Microsoft</copyright>
+    <tags>msbuild</tags>
+  </metadata>
+  <files>
+    <file src="$filePath$\**" target="tools" />
+  </files>
+</package>
