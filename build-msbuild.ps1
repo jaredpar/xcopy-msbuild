@@ -35,7 +35,7 @@ function Compose-Core() {
     Copy-Item (Join-Path $msbuildVersionDir "Microsoft.Common.props") (Join-Path $outDir $msbuildVersion)
 }
 
-function Create-ReadMe() {
+function Get-Description() {
     $fileInfo = New-Object IO.FileInfo $msbuildExe
     $sha = & git show-ref HEAD -s
     Write-Host "Creating README.md"
@@ -51,6 +51,11 @@ This is built using the following tool:
 - Repo: https://github.com/jaredpar/xcopy-msbuild
 - Source: https://github.com/jaredpar/xcopy-msbuild/commit/$($sha)
 "
+    return $text
+}
+
+function Create-ReadMe() {
+    $text = Get-Description
     $text | Out-File (Join-Path $outDir "README.md")
 }
 
@@ -89,9 +94,10 @@ function Compose-Sdks() {
 
 function Create-Packages() {
     
+    $text = Get-Description
     $nuget = Ensure-NuGet
     Write-Host "Packing $packageName"
-    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$outDir
+    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$outDir`;description=$text
 }
 
 function Ensure-OutDir([string]$outDir) {

@@ -10,8 +10,8 @@
     <projectUrl>http://aka.ms/vsextensibility</projectUrl>
     <iconUrl>http://aka.ms/vsextensibilityicon</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <description>Roslyn xcopy msbuild</description>
-    <summary></summary>
+    <description>$description$</description>
+    <summary>Roslyn xcopy msbuild</summary>
     <releaseNotes>https://www.visualstudio.com/news/vs2015-vs</releaseNotes>
     <copyright>Copyright © Microsoft</copyright>
     <tags></tags>
