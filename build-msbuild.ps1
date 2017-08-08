@@ -3,7 +3,7 @@ param (
     [string]$msbuildDir = "",
     [string]$msbuildVersion = "15.0",
     [string]$packageName = "RoslynTools.MSBuild",
-    [string]$packageVersion = "0.0.1-alpha",
+    [string]$packageVersion = "0.4.0-alpha",
     [parameter(ValueFromRemainingArguments=$true)] $extraArgs)
 
 Set-StrictMode -version 2.0
@@ -32,6 +32,7 @@ function Compose-Core() {
     Copy-Item -re (Join-Path $msbuildBinDir "1033") $outDir
     Copy-Item -re (Join-Path $msbuildBinDir "en-us") $outDir
     Copy-Item -re (Join-Path $msbuildBinDir "Roslyn") $outDir
+    Copy-Item -re (Join-Path $msbuildBinDir "SdkResolvers") $outDir
     Copy-Item (Join-Path $msbuildVersionDir "Microsoft.Common.props") (Join-Path $outDir $msbuildVersion)
 }
 
