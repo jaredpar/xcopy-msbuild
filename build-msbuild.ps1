@@ -28,12 +28,12 @@ function Get-PackageMap() {
 
 function Compose-Core() { 
     Write-Host "Composing Core Binaries"
-    Get-ChildItem $msbuildBinDir | ?{ -not $_.PSIsContainer } | %{ Copy-Item (Join-Path $msbuildBinDir $_) $outDir }
-    Copy-Item -re (Join-Path $msbuildBinDir "1033") $outDir
-    Copy-Item -re (Join-Path $msbuildBinDir "en-us") $outDir
-    Copy-Item -re (Join-Path $msbuildBinDir "Roslyn") $outDir
-    Copy-Item -re (Join-Path $msbuildBinDir "SdkResolvers") $outDir
-    Copy-Item (Join-Path $msbuildVersionDir "Microsoft.Common.props") (Join-Path $outDir $msbuildVersion)
+    Get-ChildItem $msbuildBinDir | ?{ -not $_.PSIsContainer } | %{ Copy-Item (Join-Path $msbuildBinDir $_) $msbuildOutDir }
+    Copy-Item -re (Join-Path $msbuildBinDir "1033") $msbuildOutDir
+    Copy-Item -re (Join-Path $msbuildBinDir "en-us") $msbuildOutDir
+    Copy-Item -re (Join-Path $msbuildBinDir "Roslyn") $msbuildOutDir
+    Copy-Item -re (Join-Path $msbuildBinDir "SdkResolvers") $msbuildOutDir
+    Copy-Item (Join-Path $msbuildVersionDir "Microsoft.Common.props") (Join-Path $msbuildOutDir $msbuildVersion)
 }
 
 function Get-Description() {
@@ -57,7 +57,7 @@ This is built using the following tool:
 
 function Create-ReadMe() {
     $text = Get-Description
-    $text | Out-File (Join-Path $outDir "README.md")
+    $text | Out-File (Join-Path $msbuildOutDir "README.md")
 }
 
 # The project.json components aren't presently available as a Nuget package.  Compose them 
@@ -65,7 +65,7 @@ function Create-ReadMe() {
 function Compose-Projectjson() { 
     Write-Host "Composing project.json support"
     $sourceDir = Join-Path $msbuildDir "Microsoft\NuGet"
-    $destDir = Join-Path $outDir "Microsoft\NuGet"
+    $destDir = Join-Path $msbuildOutDir "Microsoft\NuGet"
     Create-Directory $destDir | Out-Null
     Copy-Item -re "$sourceDir\*" $destDir
     Copy-Item (Join-Path $msbuildVersionDir "Imports\Microsoft.Common.Props\ImportBefore\Microsoft.NuGet.ImportBefore.props") $importPropsBeforeDir
@@ -74,7 +74,7 @@ function Compose-Projectjson() {
 
 function Compose-Portable() {
     Write-Host "Composing portable targets"
-    $portableDir = Join-Path $outDir "Microsoft\Portable"
+    $portableDir = Join-Path $msbuildOutDir "Microsoft\Portable"
     Create-Directory $portableDir | Out-Null
     $sourceDir = Join-Path $msbuildDir "Microsoft\Portable"
 
@@ -86,7 +86,7 @@ function Compose-Portable() {
 
 function Compose-Sdks() { 
     Write-Host "Composing SDKs"
-    $destDir = Join-Path $outDir "Sdks"
+    $destDir = Join-Path $msbuildOutDir "Sdks"
     $sourceDir = Join-Path $msbuildDir "Sdks"
 
     Create-Directory $destDir
@@ -98,12 +98,12 @@ function Create-Packages() {
     $text = Get-Description
     $nuget = Ensure-NuGet
     Write-Host "Packing $packageName"
-    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$outDir`;description=$text
+    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$msbuildOutDir`;description=$text
 }
 
-function Ensure-OutDir([string]$outDir) {
-    Create-Directory $outDir -ErrorAction SilentlyContinue | Out-Null
-    Remove-Item -re -fo "$outDir\*"
+function Ensure-OutDir([string]$msbuildOutDir) {
+    Create-Directory $msbuildOutDir -ErrorAction SilentlyContinue | Out-Null
+    Remove-Item -re -fo "$msbuildOutDir\*"
     Create-Directory $importPropsBeforeDir | Out-Null
     Create-Directory $importTargetsBeforeDir | Out-Null
     Create-Directory $importTargetsAfterDir | Out-Null
@@ -140,12 +140,12 @@ try {
         exit 1
     }
 
-    $outDir = Join-Path $binariesDir "msbuild"
-    $importPropsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
-    $importTargetsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
-    $importTargetsAfterDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
+    $msbuildOutDir = Join-Path $binariesDir "msbuild"
+    $importPropsBeforeDir = Join-Path (Join-Path $msbuildOutDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
+    $importTargetsBeforeDir = Join-Path (Join-Path $msbuildOutDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
+    $importTargetsAfterDir = Join-Path (Join-Path $msbuildOutDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
 
-    Ensure-OutDir $outDir
+    Ensure-OutDir $msbuildOutDir
     Compose-Core
     Compose-Projectjson
     Compose-Portable
