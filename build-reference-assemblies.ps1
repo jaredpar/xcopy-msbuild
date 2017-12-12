@@ -23,8 +23,8 @@ function Compose-Framework() {
     $copyList = @(
         ".NETCore\v5.0",
         ".NETFramework\v4.0",
-        ".NETFramework\v4.6",
         ".NETFramework\v4.5",
+        ".NETFramework\v4.6",
         ".NETFramework\v4.6.1",
         ".NETFramework\v4.6.2",
         ".NETFramework\v4.X",
