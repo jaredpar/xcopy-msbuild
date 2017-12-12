@@ -93,12 +93,23 @@ function Compose-Sdks() {
     Copy-Item -re (Join-Path $sourceDir "Microsoft.Net.Sdk") $destDir
 }
 
+function Compose-NuGet() {
+    Write-Host "Composing NuGet"
+    $relativeDir = "IDE\CommonExtensions\Microsoft\NuGet"
+    $destDir = $msbuildOutDir
+    $sourceDir = (Resolve-Path (Join-Path "$msbuildDir\..\Common7" $relativeDir)).Path
+
+    Create-Directory $destDir 
+    Copy-Item "$sourceDir\*targets" $destDir
+    Copy-Item "$sourceDir\*dll" $destDir -exclude *VisualStudio*,*.Tools*
+}
+
 function Create-Packages() {
     
     $text = Get-Description
     $nuget = Ensure-NuGet
     Write-Host "Packing $packageName"
-    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$msbuildOutDir`;description=$text
+    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$outDir`;description=$text
 }
 
 function Ensure-OutDir([string]$msbuildOutDir) {
@@ -140,7 +151,12 @@ try {
         exit 1
     }
 
-    $msbuildOutDir = Join-Path $binariesDir "msbuild"
+    $outDir = Join-Path $binariesDir "package"
+    $msbuildOutDir = Join-Path $outDir "msbuild"
+    $common7OutDir = Join-Path $outDir "Common7"
+    Create-Directory $msbuildOutDir
+    Create-Directory $common7OutDir
+
     $importPropsBeforeDir = Join-Path (Join-Path $msbuildOutDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
     $importTargetsBeforeDir = Join-Path (Join-Path $msbuildOutDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
     $importTargetsAfterDir = Join-Path (Join-Path $msbuildOutDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
@@ -150,6 +166,7 @@ try {
     Compose-Projectjson
     Compose-Portable
     Compose-Sdks
+    Compose-NuGet
     Create-ReadMe
     Create-Packages
 

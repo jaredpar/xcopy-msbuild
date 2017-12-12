@@ -17,6 +17,6 @@
     <tags></tags>
   </metadata>
   <files>
-    <file src="$filePath$\**" target="tools\msbuild" />
+    <file src="$filePath$\**" target="tools" />
   </files>
 </package>
