@@ -17,12 +17,13 @@ function Print-Usage() {
     Write-Host "\t-packageVersion   Version of the nuget package"
 }
 
-# TODO: remove this step once we have a valid framework asesmbly project
+# TODO: remove this step once we have a valid framework assembly project
 function Compose-Framework() {
     Write-Host "Composing reference assemblies"
     $copyList = @(
         ".NETCore\v5.0",
         ".NETFramework\v4.0",
+        ".NETFramework\v4.5",
         ".NETFramework\v4.6",
         ".NETFramework\v4.6.1",
         ".NETFramework\v4.6.2",
