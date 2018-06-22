@@ -5,7 +5,7 @@
 param (
     [string]$root = "c:\",
     [string]$packageName = "RoslynTools.ReferenceAssemblies",
-    [string]$packageVersion = "0.0.1-alpha",
+    [string]$packageVersion = "0.1.3",
     [parameter(ValueFromRemainingArguments=$true)] $extraArgs)
 Set-StrictMode -version 2.0
 $ErrorActionPreference="Stop"
