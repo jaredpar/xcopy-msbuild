@@ -1,7 +1,6 @@
 [CmdletBinding(PositionalBinding=$false)]
 param (
-    [string]$msbuildDir = "",
-    [string]$msbuildVersion = "15.0",
+    [string]$buildToolsDir = "",
     [string]$packageName = "RoslynTools.MSBuild",
     [string]$packageVersion = "0.4.0-alpha",
     [parameter(ValueFromRemainingArguments=$true)] $extraArgs)
@@ -11,29 +10,9 @@ $ErrorActionPreference="Stop"
 
 function Print-Usage() {
     Write-Host "build-msbuild.ps1"
-    Write-Host "`t-msbuildDir path          Path to MSBuild"
-    Write-Host "`t-msbuildVersion version   Version of msbuild (default 15.0)"
+    Write-Host "`t-buildToolsDir path       Path to Build Tools Installation"
     Write-Host "\t-packageName              Name of the nuget package (RoslynTools.MSBuild)"
     Write-Host "\t-packageVersion           Version of the nuget package"
-}
-
-function Get-PackageMap() {
-    $map = @{}
-    $x = [xml](Get-Content (Join-Path $repoDir "packages.config"))
-    foreach ($p in $x.packages.package) {
-        $map[$p.id] = $p.version
-    }
-    return $map
-}
-
-function Compose-Core() { 
-    Write-Host "Composing Core Binaries"
-    Get-ChildItem $msbuildBinDir | ?{ -not $_.PSIsContainer } | %{ Copy-Item (Join-Path $msbuildBinDir $_) $outDir }
-    Copy-Item -re (Join-Path $msbuildBinDir "1033") $outDir
-    Copy-Item -re (Join-Path $msbuildBinDir "en-us") $outDir
-    Copy-Item -re (Join-Path $msbuildBinDir "Roslyn") $outDir
-    Copy-Item -re (Join-Path $msbuildBinDir "SdkResolvers") $outDir
-    Copy-Item (Join-Path $msbuildVersionDir "Microsoft.Common.props") (Join-Path $outDir $msbuildVersion)
 }
 
 function Get-Description() {
@@ -60,39 +39,6 @@ function Create-ReadMe() {
     $text | Out-File (Join-Path $outDir "README.md")
 }
 
-# The project.json components aren't presently available as a Nuget package.  Compose them 
-# together here from an existing MSBuild installation.
-function Compose-Projectjson() { 
-    Write-Host "Composing project.json support"
-    $sourceDir = Join-Path $msbuildDir "Microsoft\NuGet"
-    $destDir = Join-Path $outDir "Microsoft\NuGet"
-    Create-Directory $destDir | Out-Null
-    Copy-Item -re "$sourceDir\*" $destDir
-    Copy-Item (Join-Path $msbuildVersionDir "Imports\Microsoft.Common.Props\ImportBefore\Microsoft.NuGet.ImportBefore.props") $importPropsBeforeDir
-    Copy-Item (Join-Path $msbuildVersionDir "Microsoft.Common.Targets\ImportAfter\Microsoft.NuGet.ImportAfter.targets") $importTargetsAfterDir
-}
-
-function Compose-Portable() {
-    Write-Host "Composing portable targets"
-    $portableDir = Join-Path $outDir "Microsoft\Portable"
-    Create-Directory $portableDir | Out-Null
-    $sourceDir = Join-Path $msbuildDir "Microsoft\Portable"
-
-    Copy-Item (Join-Path $sourceDir "Microsoft.Portable.*") $portableDir
-    Copy-Item -re (Join-Path $sourceDir "v5.0") $portableDir
-    Copy-Item -re (Join-Path $sourceDir "v4.5") $portableDir
-    Copy-Item -re (Join-Path $sourceDir "v4.6") $portableDir
-}
-
-function Compose-Sdks() { 
-    Write-Host "Composing SDKs"
-    $destDir = Join-Path $outDir "Sdks"
-    $sourceDir = Join-Path $msbuildDir "Sdks"
-
-    Create-Directory $destDir
-    Copy-Item -re (Join-Path $sourceDir "Microsoft.Net.Sdk") $destDir
-}
-
 function Create-Packages() {
     
     $text = Get-Description
@@ -101,55 +47,35 @@ function Create-Packages() {
     & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$outDir`;description=$text
 }
 
-function Ensure-OutDir([string]$outDir) {
-    Create-Directory $outDir -ErrorAction SilentlyContinue | Out-Null
-    Remove-Item -re -fo "$outDir\*"
-    Create-Directory $importPropsBeforeDir | Out-Null
-    Create-Directory $importTargetsBeforeDir | Out-Null
-    Create-Directory $importTargetsAfterDir | Out-Null
-}
-
-function Test-MSBuildDir() {
-    $all = @($msbuildDir, $msbuildBinDir, $msbuildVersionDir, $msbuildExe)
-    foreach ($file in $all) { 
-        if (-not (Test-Path $file)) { 
-            Write-Host "Path doesn't exist $file"
-            return $false
-        }
-    }
-
-    return $true
-}
-
 Push-Location $PSScriptRoot
 try {
     . .\build-utils.ps1
 
-    $msbuildBinDir = Join-Path $msbuildDir "$msbuildVersion\Bin"
-    $msbuildVersionDir = Join-Path $msbuildDir $msbuildVersion
-    $msbuildExe = Join-Path $msbuildBinDir "MSBuild.exe"
+    $msbuildDir = Join-Path $buildToolsDir "MSBuild\15.0\Bin"
+    $msbuildExe = Join-Path $msbuildDir "msbuild.exe"
+
+    if (-not (Test-Path $buildToolsDir)) { 
+        Write-Host "Need a valid value for -buildToolsDir"
+        exit 1
+    }
+
+    if (-not (Test-Path $msbuildExe)) { 
+        Write-Host "Did not find msbuild at $msbuildExe"
+        exit 1
+    }
 
     if ($extraArgs -ne $null) {
         Write-Host "Did not recognize extra arguments: $extraArgs"
         Print-Usage
         exit 1
     }
+    
 
-    if (-not (Test-MSBuildDir)) { 
-        Print-Usage
-        exit 1
-    }
-
-    $outDir = Join-Path $binariesDir "msbuild"
-    $importPropsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Imports\Microsoft.Common.props\ImportBefore"
-    $importTargetsBeforeDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportBefore"
-    $importTargetsAfterDir = Join-Path (Join-Path $outDir $msbuildVersion) "Microsoft.Common.targets\ImportAfter"
-
-    Ensure-OutDir $outDir
-    Compose-Core
-    Compose-Projectjson
-    Compose-Portable
-    Compose-Sdks
+    $outDir = Join-Path $binariesDir "BuildTools"
+    Create-Directory $outDir -ErrorAction SilentlyContinue | Out-Null
+    Remove-Item -re -fo "$outDir\*"
+    Write-Host "Copying Build Tools"
+    Copy-Item -re $buildToolsDir $outDir
     Create-ReadMe
     Create-Packages
 

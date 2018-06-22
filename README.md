@@ -5,19 +5,21 @@ version of MSBuild which can be distributed via xcopy / nuget.
 
 ## Build MSBuild
 
-To build the xcopy msbuild simple run the following command
+To build the xcopy msbuild you need to have a minimal [Build Tools 2017](https://visualstudio.microsoft.com/downloads/#other) 
+installation on your machine. When creating this installation make sure to check **only** the 
+following options:
+
+- .Net Desktop Build Tools
+- .Net Core 2.0 development tools (right column)
+
+Then to build the xcopy NuPkg run the following command:
+
 
 ``` cmd
-.\build-msbuild.ps1 -msbuildDir <path to msbuild>
+.\build-msbuild.ps1 -buildToolsDir <path to build tools folder>
 ```
 
 That will put the MSBuild output into `binaries\msbuild`.  
-
-To run tests use the following command
-
-``` cmd
-.\build.ps1 -test
-```
 
 ## Build Reference Assemblies
 

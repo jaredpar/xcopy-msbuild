@@ -12,7 +12,7 @@ function Ensure-NuGet() {
     $nuget = Join-Path $binariesDir "nuget.exe"
     if (-not (Test-Path $nuget)) {
         Create-Directory (Split-Path -parent $nuget)
-        $version = "3.6.0-beta1"
+        $version = "4.7.0"
         Write-Host "Downloading NuGet.exe $version"
         $webClient = New-Object -TypeName "System.Net.WebClient"
         $webClient.DownloadFile("https://dist.nuget.org/win-x86-commandline/v$version/NuGet.exe", $nuget)
