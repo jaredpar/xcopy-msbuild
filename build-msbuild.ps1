@@ -2,7 +2,7 @@
 param (
     [string]$buildToolsDir = "",
     [string]$packageName = "RoslynTools.MSBuild",
-    [string]$packageVersion = "0.4.0-alpha",
+    [string]$packageVersion = "0.5.0-alpha",
     [parameter(ValueFromRemainingArguments=$true)] $extraArgs)
 
 Set-StrictMode -version 2.0
@@ -75,7 +75,7 @@ try {
     Create-Directory $outDir -ErrorAction SilentlyContinue | Out-Null
     Remove-Item -re -fo "$outDir\*"
     Write-Host "Copying Build Tools"
-    Copy-Item -re $buildToolsDir $outDir
+    Copy-Item -re "$buildToolsDir\*" $outDir
     Create-ReadMe
     Create-Packages
 
