@@ -2,7 +2,7 @@
 param (
     [string]$buildToolsDir = "",
     [string]$packageName = "RoslynTools.MSBuild",
-    [string]$packageVersion = "0.5.0-alpha",
+    [string]$packageVersion = "16.0.0-rc1-alpha",
     [parameter(ValueFromRemainingArguments=$true)] $extraArgs)
 
 Set-StrictMode -version 2.0
@@ -11,8 +11,8 @@ $ErrorActionPreference="Stop"
 function Print-Usage() {
     Write-Host "build-msbuild.ps1"
     Write-Host "`t-buildToolsDir path       Path to Build Tools Installation"
-    Write-Host "\t-packageName              Name of the nuget package (RoslynTools.MSBuild)"
-    Write-Host "\t-packageVersion           Version of the nuget package"
+    Write-Host "`t-packageName              Name of the nuget package (RoslynTools.MSBuild)"
+    Write-Host "`t-packageVersion           Version of the nuget package"
 }
 
 function Get-Description() {
@@ -51,7 +51,7 @@ Push-Location $PSScriptRoot
 try {
     . .\build-utils.ps1
 
-    $msbuildDir = Join-Path $buildToolsDir "MSBuild\15.0\Bin"
+    $msbuildDir = Join-Path $buildToolsDir "MSBuild\Current\Bin"
     $msbuildExe = Join-Path $msbuildDir "msbuild.exe"
 
     if (-not (Test-Path $buildToolsDir)) { 
