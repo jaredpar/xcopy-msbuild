@@ -5,18 +5,19 @@ version of MSBuild which can be distributed via xcopy / nuget.
 
 ## Build MSBuild
 
-To build the xcopy msbuild you need to have a minimal [Build Tools 2017](https://visualstudio.microsoft.com/downloads/#other) 
+To build the xcopy msbuild you need to have a minimal [Build Tools 2019](https://visualstudio.microsoft.com/downloads/#other) 
 installation on your machine. When creating this installation make sure to check **only** the 
 following options:
 
 - .Net Desktop Build Tools
-- .Net Core 2.0 development tools (right column)
+- .Net Core 2.1 development tools (right column)
+- .Net Framework 4 - 4.6 development tools
 
 Then to build the xcopy NuPkg run the following command:
 
 
 ``` cmd
-.\build-msbuild.ps1 -buildToolsDir <path to build tools folder>
+.\build-msbuild.ps1 -buildToolsDir "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools"
 ```
 
 That will put the MSBuild output into `binaries\msbuild`.  
