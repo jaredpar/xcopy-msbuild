@@ -2,7 +2,7 @@
 param (
     [string]$buildToolsDir = "",
     [string]$packageName = "RoslynTools.MSBuild",
-    [string]$packageVersion = "16.0.0-alpha",
+    [string]$packageVersion = "16.8.0-preview1",
     [parameter(ValueFromRemainingArguments=$true)] $extraArgs)
 
 Set-StrictMode -version 2.0
