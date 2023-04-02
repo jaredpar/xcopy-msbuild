@@ -17,7 +17,6 @@ function Print-Usage() {
 
 function Get-Description() {
     $fileInfo = New-Object IO.FileInfo $msbuildExe
-    $sha = & git show-ref HEAD -s
     Write-Host "Creating README.md"
     $text =
 "
@@ -29,7 +28,7 @@ This is an xcopy version of MSBuild with the following version:
 This is built using the following tool:
 
 - Repo: https://github.com/jaredpar/xcopy-msbuild
-- Source: https://github.com/jaredpar/xcopy-msbuild/commit/$($sha)
+- Source: https://github.com/jaredpar/xcopy-msbuild
 "
     return $text
 }
@@ -40,11 +39,12 @@ function Create-ReadMe() {
 }
 
 function Create-Packages() {
-    
+    $packagesDir = Join-Path $binariesDir "packages"
+    Create-Directory $packagesDir
     $text = Get-Description
     $nuget = Ensure-NuGet
-    Write-Host "Packing $packageName"
-    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $binariesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$outDir`;description=$text
+    Write-Host "Packing $packageName into $packagesDir"
+    & $nuget pack msbuild.nuspec -ExcludeEmptyDirectories -OutputDirectory $packagesDir -Properties name=$packageName`;version=$packageVersion`;filePath=$outDir`;description=$text
 }
 
 Push-Location $PSScriptRoot
@@ -55,7 +55,7 @@ try {
     $msbuildExe = Join-Path $msbuildDir "msbuild.exe"
 
     if (-not (Test-Path $buildToolsDir)) { 
-        Write-Host "Need a valid value for -buildToolsDir"
+        Write-Host "-buildToolsDir does not exist: $buildToolsDir"
         exit 1
     }
 
